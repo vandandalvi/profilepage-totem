@@ -67,40 +67,31 @@ export function ReferralSection() {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 mb-4"
+      className="px-4 sm:px-6 lg:px-8 mb-3 sm:mb-4"
     >
-      {/* Referral Card */}
+      {/* ── Mobile: single merged card ── */}
       <motion.div
         variants={itemVariants}
-        className="card-premium p-5 sm:p-6 flex flex-col justify-between"
+        className="lg:hidden card-premium p-4 sm:p-5 flex flex-col gap-4"
       >
-        {/* Title row */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5 sm:mb-6">
-          <div className="min-w-0">
-            <h2 className="text-[15px] sm:text-[17px] font-semibold text-text-primary mb-1.5">
-              {data?.title || "Invite friends, earn free prompts"}
-            </h2>
-            <p className="text-[13px] text-text-secondary leading-relaxed">
-              {data?.description || "Share your link. Every friend who signs up adds 5 free prompts to your account."}
-            </p>
-          </div>
-          <span className="self-start shrink-0 px-3 py-1.5 bg-brand-teal-dark/40 text-brand-teal text-[11px] font-medium rounded-full border border-brand-teal/10 whitespace-nowrap">
-            +{data?.rewardPerReferral || 5} prompts per referral
-          </span>
-        </div>
-
+        {/* Referral section */}
         <div>
-          {/* Referral URL input + animated copy button */}
-          <div className="relative flex items-center mb-4">
+          <h2 className="text-[14px] font-semibold text-text-primary mb-1">
+            {data?.title || "Invite friends, earn free prompts"}
+          </h2>
+          <p className="text-[12px] text-text-secondary leading-relaxed mb-3">
+            {data?.description}
+          </p>
+          <div className="relative flex items-center mb-3">
             <input
               type="text"
               readOnly
               value={data?.referralUrl || ""}
-              className="w-full bg-surface-input border border-border-input rounded-full py-2.5 pl-4 pr-28 text-[13px] text-brand-teal focus:outline-none focus:border-brand-teal/40 transition-colors truncate"
+              className="w-full bg-surface-input border border-border-input rounded-full py-2 pl-3 pr-24 text-[12px] text-brand-teal focus:outline-none focus:border-brand-teal/40 transition-colors truncate"
             />
             <button
               onClick={handleCopy}
-              className="absolute right-1 top-1 bottom-1 px-4 bg-surface-card hover:bg-surface-card-hover rounded-full text-[13px] font-medium text-text-primary transition-all duration-200 flex items-center justify-center gap-2 border border-border-subtle whitespace-nowrap active:scale-[0.97]"
+              className="absolute right-1 top-1 bottom-1 px-3 bg-surface-card hover:bg-surface-card-hover rounded-full text-[12px] font-medium text-text-primary transition-all duration-200 flex items-center justify-center gap-1.5 border border-border-subtle whitespace-nowrap active:scale-[0.97]"
             >
               <AnimatePresence mode="wait">
                 {copied ? (
@@ -110,9 +101,9 @@ export function ReferralSection() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.2 }}
-                    className="flex items-center gap-1.5 text-brand-teal"
+                    className="flex items-center gap-1 text-brand-teal"
                   >
-                    <Check size={14} />
+                    <Check size={12} />
                     Copied!
                   </motion.span>
                 ) : (
@@ -122,18 +113,16 @@ export function ReferralSection() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.2 }}
-                    className="flex items-center gap-1.5"
+                    className="flex items-center gap-1"
                   >
-                    <Copy size={13} />
-                    Copy link
+                    <Copy size={11} />
+                    Copy
                   </motion.span>
                 )}
               </AnimatePresence>
             </button>
           </div>
-
-          {/* Gradient progress bar */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="flex-1 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
               <motion.div
                 className="h-full progress-gradient"
@@ -147,34 +136,140 @@ export function ReferralSection() {
             </span>
           </div>
         </div>
-      </motion.div>
 
-      {/* Upgrade Card */}
-      <motion.div
-        variants={itemVariants}
-        className="card-premium p-5 sm:p-6 flex flex-col justify-center relative overflow-hidden"
-      >
-        {/* Subtle background glow */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-brand-yellow/[0.04] rounded-full blur-3xl pointer-events-none" />
+        {/* Divider */}
+        <div className="border-t border-border-subtle" />
 
-        <div className="flex gap-4">
-          <div className="shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-brand-yellow/10 rounded-xl flex items-center justify-center border border-brand-yellow/15 relative z-10 shadow-glow-yellow">
-            <Zap className="text-brand-yellow fill-brand-yellow/20" size={22} />
+        {/* Upgrade inline banner */}
+        <div className="flex items-center gap-3">
+          <div className="shrink-0 w-9 h-9 bg-brand-yellow/10 rounded-xl flex items-center justify-center border border-brand-yellow/15">
+            <Zap className="text-brand-yellow fill-brand-yellow/20" size={18} />
           </div>
-          <div className="flex flex-col z-10 min-w-0">
-            <h2 className="text-[15px] sm:text-[16px] font-semibold text-text-primary mb-2">Running low on prompts</h2>
-            <p className="text-[13px] text-text-secondary leading-relaxed mb-4">
-              Power users go Pro to avoid waiting and access priority AI compute.
-            </p>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-text-primary">Running low on prompts</p>
             <a
               href="#"
-              className="shimmer-text text-[14px] font-semibold text-brand-yellow transition-colors inline-flex items-center gap-1.5 w-fit group"
+              className="shimmer-text text-[12px] font-semibold text-brand-yellow inline-flex items-center gap-1 group"
             >
               Upgrade to Pro
-              <span className="transform transition-transform group-hover:translate-x-1">→</span>
+              <span className="transform transition-transform group-hover:translate-x-0.5">→</span>
             </a>
           </div>
         </div>
+      </motion.div>
+
+      {/* ── Desktop: two-card side-by-side grid ── */}
+      <motion.div
+        variants={containerVariants}
+        className="hidden lg:grid lg:grid-cols-[1fr_360px] gap-3 sm:gap-4"
+      >
+        {/* Referral Card */}
+        <motion.div
+          variants={itemVariants}
+          className="card-premium p-5 sm:p-6 flex flex-col justify-between"
+        >
+          {/* Title row */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5 sm:mb-6">
+            <div className="min-w-0">
+              <h2 className="text-[15px] sm:text-[17px] font-semibold text-text-primary mb-1.5">
+                {data?.title || "Invite friends, earn free prompts"}
+              </h2>
+              <p className="text-[13px] text-text-secondary leading-relaxed">
+                {data?.description || "Share your link. Every friend who signs up adds 5 free prompts to your account."}
+              </p>
+            </div>
+            <span className="self-start shrink-0 px-3 py-1.5 bg-brand-teal-dark/40 text-brand-teal text-[11px] font-medium rounded-full border border-brand-teal/10 whitespace-nowrap">
+              +{data?.rewardPerReferral || 5} prompts per referral
+            </span>
+          </div>
+
+          <div>
+            {/* Referral URL input + animated copy button */}
+            <div className="relative flex items-center mb-4">
+              <input
+                type="text"
+                readOnly
+                value={data?.referralUrl || ""}
+                className="w-full bg-surface-input border border-border-input rounded-full py-2.5 pl-4 pr-28 text-[13px] text-brand-teal focus:outline-none focus:border-brand-teal/40 transition-colors truncate"
+              />
+              <button
+                onClick={handleCopy}
+                className="absolute right-1 top-1 bottom-1 px-4 bg-surface-card hover:bg-surface-card-hover rounded-full text-[13px] font-medium text-text-primary transition-all duration-200 flex items-center justify-center gap-2 border border-border-subtle whitespace-nowrap active:scale-[0.97]"
+              >
+                <AnimatePresence mode="wait">
+                  {copied ? (
+                    <motion.span
+                      key="copied"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center gap-1.5 text-brand-teal"
+                    >
+                      <Check size={14} />
+                      Copied!
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="copy"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center gap-1.5"
+                    >
+                      <Copy size={13} />
+                      Copy link
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
+
+            {/* Gradient progress bar */}
+            <div className="flex items-center gap-4">
+              <div className="flex-1 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full progress-gradient"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${data?.progressPercentage || 0}%` }}
+                  transition={{ duration: 1.2, delay: 0.5 }}
+                />
+              </div>
+              <span className="text-[11px] text-text-secondary font-medium whitespace-nowrap shrink-0 tabular-nums">
+                +{data?.earnedPrompts || 0} prompts earned
+              </span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Upgrade Card */}
+        <motion.div
+          variants={itemVariants}
+          className="card-premium p-5 sm:p-6 flex flex-col justify-center relative overflow-hidden"
+        >
+          {/* Subtle background glow */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-brand-yellow/[0.04] rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex gap-4">
+            <div className="shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-brand-yellow/10 rounded-xl flex items-center justify-center border border-brand-yellow/15 relative z-10 shadow-glow-yellow">
+              <Zap className="text-brand-yellow fill-brand-yellow/20" size={22} />
+            </div>
+            <div className="flex flex-col z-10 min-w-0">
+              <h2 className="text-[15px] sm:text-[16px] font-semibold text-text-primary mb-2">Running low on prompts</h2>
+              <p className="text-[13px] text-text-secondary leading-relaxed mb-4">
+                Power users go Pro to avoid waiting and access priority AI compute.
+              </p>
+              <a
+                href="#"
+                className="shimmer-text text-[14px] font-semibold text-brand-yellow transition-colors inline-flex items-center gap-1.5 w-fit group"
+              >
+                Upgrade to Pro
+                <span className="transform transition-transform group-hover:translate-x-1">→</span>
+              </a>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
     </motion.div>
   );

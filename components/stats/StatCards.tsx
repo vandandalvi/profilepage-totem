@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, TrendingUp, TrendingDown, Code, Search, PenLine, BookOpen, MoreHorizontal } from "lucide-react";
-import { motion, Variants } from "framer-motion";
+import { Sparkles, TrendingUp, TrendingDown, Code, Search, PenLine, BookOpen, MoreHorizontal, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useAnimatedCounter } from "@/lib/useAnimatedCounter";
 import { ChatGPTIcon, ClaudeIcon, GeminiIcon, GrokIcon, LlamaIcon } from "@/components/icons/AIIcons";
 
@@ -81,6 +81,60 @@ const DUMMY_STATS: DashboardStats = {
   },
 };
 
+// ── Mobile Accordion Wrapper ──
+function MobileAccordionCard({
+  label,
+  summary,
+  children,
+}: {
+  label: string;
+  summary: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="sm:contents">
+      {/* Mobile collapsed header — only visible on mobile */}
+      <div
+        className="sm:hidden card-premium px-4 py-3 flex items-center justify-between cursor-pointer active:opacity-80"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <div className="flex flex-col">
+          <span className="text-[9px] font-bold tracking-[0.15em] text-text-tertiary uppercase">{label}</span>
+          <span className="text-[14px] font-semibold text-text-primary mt-0.5">{summary}</span>
+        </div>
+        <ChevronDown
+          size={16}
+          className={`text-text-secondary transition-transform duration-200 shrink-0 ${open ? "rotate-180" : ""}`}
+        />
+      </div>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="sm:hidden overflow-hidden"
+          >
+            {/* Re-broadcast 'show' variant so child cards animate correctly on open */}
+            <motion.div
+              initial="hidden"
+              animate="show"
+              variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } }}
+              className="px-2 pb-2 pt-1"
+            >
+              {children}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Desktop — always fully visible */}
+      <div className="hidden sm:block sm:h-full">{children}</div>
+    </div>
+  );
+}
+
 // ── Sub-components ──
 
 function DailyLimitCard({ stats }: { stats: DashboardStats }) {
@@ -91,7 +145,7 @@ function DailyLimitCard({ stats }: { stats: DashboardStats }) {
   return (
     <motion.div
       variants={cardVariants}
-      className="card-premium p-5 sm:p-6 flex flex-col items-center justify-center relative"
+      className="card-premium p-5 sm:p-6 flex flex-col items-center justify-center relative h-full"
     >
       <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center mb-4 overflow-visible">
         <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 100 100">
@@ -141,7 +195,7 @@ function PromptEfficiencyCard({ stats }: { stats: DashboardStats }) {
   return (
     <motion.div
       variants={cardVariants}
-      className="card-premium p-5 sm:p-6 flex flex-col"
+      className="card-premium p-5 sm:p-6 flex flex-col h-full"
     >
       <h3 className="text-[10px] font-bold tracking-[0.15em] text-text-tertiary uppercase mb-3">Prompt Efficiency</h3>
       <p className="text-3xl sm:text-4xl font-bold text-text-primary mb-1">
@@ -204,11 +258,11 @@ function TopCategoryCard({ stats }: { stats: DashboardStats }) {
   return (
     <motion.div
       variants={cardVariants}
-      className="card-premium p-5 sm:p-6 flex flex-col relative"
+      className="card-premium p-5 sm:p-6 flex flex-col relative h-full"
     >
-      <div className="absolute top-5 right-5 sm:top-6 sm:right-6 text-brand-teal opacity-60">
-        <CategoryIcon size={32} strokeWidth={1.5} />
-      </div>
+        <div className="absolute top-5 right-5 sm:top-6 sm:right-6 text-brand-teal opacity-60">
+          <CategoryIcon size={32} strokeWidth={1.5} />
+        </div>
 
       <h3 className="text-[10px] font-bold tracking-[0.15em] text-text-tertiary uppercase mb-2">Top Category</h3>
       <div className="flex items-baseline gap-3 mb-1 mt-1">
@@ -264,7 +318,7 @@ function MostUsedAICard({ stats }: { stats: DashboardStats }) {
   return (
     <motion.div
       variants={cardVariants}
-      className="card-premium p-5 sm:p-6 flex flex-col relative"
+      className="card-premium p-5 sm:p-6 flex flex-col relative h-full"
     >
       <h3 className="text-[10px] font-bold tracking-[0.15em] text-text-tertiary uppercase mb-2">Most Used AI</h3>
       <div className="flex items-center gap-3 mb-1 mt-1">
@@ -329,12 +383,35 @@ export function StatCards() {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 mb-4"
+      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4 px-4 sm:px-6 lg:px-8 mb-3 sm:mb-4 sm:items-stretch"
     >
-      <DailyLimitCard stats={stats} />
-      <PromptEfficiencyCard stats={stats} />
-      <TopCategoryCard stats={stats} />
-      <MostUsedAICard stats={stats} />
+      <MobileAccordionCard
+        label="Daily Limit"
+        summary={`${stats.dailyLimit.used}/${stats.dailyLimit.total} prompts · ${stats.dailyLimit.percentage}% used`}
+      >
+        <DailyLimitCard stats={stats} />
+      </MobileAccordionCard>
+
+      <MobileAccordionCard
+        label="Prompt Efficiency"
+        summary={`${stats.promptEfficiency.percentLessTyping}% less typing · ${stats.promptEfficiency.timeSavedMinutes}m saved`}
+      >
+        <PromptEfficiencyCard stats={stats} />
+      </MobileAccordionCard>
+
+      <MobileAccordionCard
+        label="Top Category"
+        summary={`${stats.topCategory.name} · ${stats.topCategory.percentage}%`}
+      >
+        <TopCategoryCard stats={stats} />
+      </MobileAccordionCard>
+
+      <MobileAccordionCard
+        label="Most Used AI"
+        summary={`${stats.topModel.name} · ${stats.topModel.promptCount} prompts`}
+      >
+        <MostUsedAICard stats={stats} />
+      </MobileAccordionCard>
     </motion.div>
   );
 }

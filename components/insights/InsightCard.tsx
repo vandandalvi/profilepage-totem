@@ -40,7 +40,7 @@ export function InsightCard() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="px-4 sm:px-6 lg:px-8 mb-4"
+      className="px-4 sm:px-6 lg:px-8 mb-2 sm:mb-4"
     >
       <div
         ref={cardRef}
@@ -61,18 +61,21 @@ export function InsightCard() {
         {/* Content */}
         <div className="flex-1 min-w-0 relative z-10">
           <h3 className="text-[10px] font-bold tracking-[0.15em] text-brand-teal/70 uppercase mb-2">AI Insight</h3>
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={currentIndex}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.4 }}
-              className="text-[14px] sm:text-[15px] text-text-primary leading-relaxed font-medium"
-            >
-              {INSIGHTS[currentIndex]}
-            </motion.p>
-          </AnimatePresence>
+          {/* Fixed min-height prevents card from resizing when insight text changes length */}
+          <div className="min-h-[3rem] sm:min-h-[2.5rem] relative">
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={currentIndex}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4 }}
+                className="text-[14px] sm:text-[15px] text-text-primary leading-relaxed font-medium absolute inset-0"
+              >
+                {INSIGHTS[currentIndex]}
+              </motion.p>
+            </AnimatePresence>
+          </div>
 
           {/* Dots indicator */}
           <div className="flex items-center gap-1.5 mt-3">
