@@ -100,12 +100,25 @@ function generateDummyData(): ActivityData {
 function DayCell({ day, index }: { day: DayData; index: number }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const isEmpty = day.models.length === 0;
-
   const dominant = day.dominantModel;
   const DominantIcon = dominant?.icon;
+  const glowOpacity = isEmpty ? 0 : Math.min(day.total / 30, 1) * 0.45 + 0.1;
 
-  // Calculate glow opacity based on total volume. Cap at 1.0 (e.g., max glow at 30+ prompts)
-  const glowOpacity = isEmpty ? 0 : Math.min(day.total / 30, 1) * 0.45 + 0.1; // Range: 0.1 to 0.55
+  const colIndex = index % 7;
+  // Determine tooltip alignment based on column index to prevent going off-screen
+  const tooltipAlignClass = 
+    colIndex === 0 ? "left-0 -translate-x-4 sm:-translate-x-2" : // Sunday
+    colIndex === 1 ? "left-0 -translate-x-2" : // Monday
+    colIndex === 5 ? "right-0 translate-x-2 left-auto" : // Friday
+    colIndex === 6 ? "right-0 translate-x-4 sm:translate-x-2 left-auto" : // Saturday
+    "left-1/2 -translate-x-1/2"; // Center for others
+
+  const arrowAlignClass = 
+    colIndex === 0 ? "left-[18px] sm:left-[20px] -translate-x-0" :
+    colIndex === 1 ? "left-[18px] sm:left-[20px] -translate-x-0" :
+    colIndex === 5 ? "right-[18px] sm:right-[20px] left-auto translate-x-0" :
+    colIndex === 6 ? "right-[18px] sm:right-[20px] left-auto translate-x-0" :
+    "left-1/2 -translate-x-1/2";
 
   return (
     <div className="relative group">
@@ -124,6 +137,7 @@ function DayCell({ day, index }: { day: DayData; index: number }) {
         transition={{ delay: 0.02 * index, duration: 0.3 }}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
+        onClick={() => setShowTooltip(!showTooltip)} // Add toggle for mobile
       >
         {/* Soft branded glow inside the cell */}
         {dominant && (
@@ -159,7 +173,7 @@ function DayCell({ day, index }: { day: DayData; index: number }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-surface-card border border-border-subtle rounded-xl shadow-card-hover p-4 z-50 pointer-events-none min-w-[200px]"
+            className={`absolute bottom-full mb-2 bg-surface-card border border-border-subtle rounded-xl shadow-card-hover p-4 z-50 pointer-events-none min-w-[200px] ${tooltipAlignClass}`}
           >
             <p className="text-[13px] font-medium text-text-secondary mb-3">
               {day.date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
@@ -189,7 +203,7 @@ function DayCell({ day, index }: { day: DayData; index: number }) {
               </>
             )}
             {/* Arrow */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-surface-card border-r border-b border-border-subtle transform rotate-45 -mt-1.5" />
+            <div className={`absolute top-full w-3 h-3 bg-surface-card border-r border-b border-border-subtle transform rotate-45 -mt-1.5 ${arrowAlignClass}`} />
           </motion.div>
         )}
       </AnimatePresence>
