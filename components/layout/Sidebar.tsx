@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { useState, useEffect } from "react";
 import {
   SquarePen,
@@ -16,11 +18,14 @@ import {
   X,
   Moon,
   Sun,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useDashboardData } from "@/lib/DashboardContext";
 
 export function Sidebar() {
+  const { isAuthenticated, logout } = useDashboardData();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(true);
@@ -97,10 +102,12 @@ export function Sidebar() {
     <>
       {/* Header */}
       <div className={cn("p-4 flex items-center", (collapsed && !isMobile) ? "flex-col gap-4 justify-center" : "justify-between")}>
-        <img
+        <Image
           src="/logo.jpg"
           alt="Velocity Logo"
-          className="w-7 h-7 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+          width={28}
+          height={28}
+          className="rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => (collapsed && !isMobile) && setCollapsed(false)}
         />
         {isMobile ? (
@@ -249,6 +256,17 @@ export function Sidebar() {
           <Download size={16} className="shrink-0" />
           {(!collapsed || isMobile) && <span>Install</span>}
         </button>
+
+        {isAuthenticated && (
+          <button
+            onClick={logout}
+            className="nav-item w-full text-left bg-transparent border-0 cursor-pointer text-red-500 hover:text-red-400 hover:bg-red-500/5 transition-colors"
+            aria-label="Disconnect profile"
+          >
+            <LogOut size={16} className="shrink-0 text-red-500" />
+            {(!collapsed || isMobile) && <span>Disconnect</span>}
+          </button>
+        )}
       </div>
     </>
   );

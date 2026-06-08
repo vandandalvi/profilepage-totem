@@ -5,12 +5,55 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { StatCards } from "@/components/stats/StatCards";
 import { InsightCard } from "@/components/insights/InsightCard";
-import { ReferralSection } from "@/components/referral/ReferralSection";
-import { TopCategoriesCard } from "@/components/analytics/TopCategoriesCard";
-import { ActivityCalendar } from "@/components/activity/ActivityCalendar";
+import dynamic from "next/dynamic";
+import { DashboardProvider, useDashboardData } from "@/lib/DashboardContext";
+import { Loader2 } from "lucide-react";
+import { AuthSetup } from "@/components/auth/AuthSetup";
 
-export default function Dashboard() {
+const ReferralSection = dynamic(() => import("@/components/referral/ReferralSection").then(m => m.ReferralSection), { ssr: true });
+const TopCategoriesCard = dynamic(() => import("@/components/analytics/TopCategoriesCard").then(m => m.TopCategoriesCard), { ssr: true });
+const ActivityCalendar = dynamic(() => import("@/components/activity/ActivityCalendar").then(m => m.ActivityCalendar), { ssr: true });
+
+function DashboardContent() {
+  const { isLoading, error, isAuthenticated, login, logout } = useDashboardData();
   const [activeTab, setActiveTab] = useState<"categories" | "streak">("categories");
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-surface-base text-brand-teal">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthSetup onLogin={login} />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen w-full flex-col gap-4 items-center justify-center bg-surface-base text-text-primary px-4 text-center">
+        <div className="bg-surface-card border border-red-500/20 rounded-2xl p-6 max-w-md shadow-card">
+          <p className="text-red-400 font-semibold mb-2">Error Loading Dashboard</p>
+          <p className="text-text-secondary text-sm mb-6">{error}</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-5 py-2.5 bg-brand-teal/10 hover:bg-brand-teal/20 text-brand-teal font-medium rounded-xl text-sm transition-all border border-brand-teal/20"
+            >
+              Retry Connection
+            </button>
+            <button
+              onClick={logout}
+              className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-text-primary font-medium rounded-xl text-sm transition-all border border-border-input"
+            >
+              Reset Credentials
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-surface-base text-text-primary overflow-hidden">
@@ -73,5 +116,13 @@ export default function Dashboard() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <DashboardProvider>
+      <DashboardContent />
+    </DashboardProvider>
   );
 }

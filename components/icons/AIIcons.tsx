@@ -2,12 +2,14 @@ import React from 'react';
 
 import gptLogo from "./gptlogo.png";
 
+import Image from "next/image";
+
 export function ChatGPTIcon({ className, size = 24, style }: { className?: string; size?: number; style?: React.CSSProperties }) {
   // Use a slightly larger visual size to compensate for the white border/padding so it matches other icons
   const visualSize = size ? size * 1.15 : 24;
   return (
-    <img 
-      src={gptLogo.src} 
+    <Image 
+      src={gptLogo} 
       width={visualSize} 
       height={visualSize} 
       className={className} 

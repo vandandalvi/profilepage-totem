@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Code, Search, PenLine, BookOpen, MoreHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAnimatedCounter } from "@/lib/useAnimatedCounter";
+import { useDashboardData } from "@/lib/DashboardContext";
 
 interface CategoryItem {
   icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
@@ -13,12 +14,21 @@ interface CategoryItem {
   color: string;
 }
 
-const DUMMY_CATEGORIES: CategoryItem[] = [
-  { icon: Code, percentage: 58, label: "CODING", value: 652, color: "var(--color-heat-4)" },
-  { icon: Search, percentage: 23, label: "RESEARCH", value: 357, color: "var(--color-heat-3)" },
-  { icon: PenLine, percentage: 11, label: "WRITING", value: 186, color: "var(--color-heat-2)" },
-  { icon: BookOpen, percentage: 6, label: "LEARNING", value: 109, color: "var(--color-heat-1)" },
-  { icon: MoreHorizontal, percentage: 2, label: "OTHER", value: 14, color: "var(--color-border-subtle)" },
+function getCategoryIcon(label: string) {
+  const norm = label.toLowerCase();
+  if (norm.includes("code") || norm.includes("develop") || norm.includes("soft")) return Code;
+  if (norm.includes("research") || norm.includes("search")) return Search;
+  if (norm.includes("write") || norm.includes("content")) return PenLine;
+  if (norm.includes("learn") || norm.includes("study")) return BookOpen;
+  return MoreHorizontal;
+}
+
+const HEAT_COLORS = [
+  "var(--color-heat-4)",
+  "var(--color-heat-3)",
+  "var(--color-heat-2)",
+  "var(--color-heat-1)",
+  "var(--color-border-subtle)"
 ];
 
 function AnimatedValue({ target, suffix }: { target: number; suffix?: string }) {
@@ -31,23 +41,20 @@ function AnimatedValue({ target, suffix }: { target: number; suffix?: string }) 
 }
 
 export function TopCategoriesCard() {
-  const [categories, setCategories] = useState<CategoryItem[]>(DUMMY_CATEGORIES);
-  const totalPrompts = categories.reduce((sum, c) => sum + c.value, 0);
+  const { data } = useDashboardData();
+  
+  if (!data) return null;
 
-  useEffect(() => {
-    // TODO: Replace with your actual API endpoint
-    const fetchCategories = async () => {
-      try {
-        // const response = await fetch('/api/v1/analytics/categories');
-        // const data = await response.json();
-        // setCategories(data);
-      } catch (error) {
-        console.error("Failed to fetch category data:", error);
-      }
-    };
-
-    // fetchCategories(); // Uncomment to fetch from API
-  }, []);
+  const totalPrompts = data.top_categories.total_prompts;
+  
+  // Map API categories to CategoryItem format
+  const categories: CategoryItem[] = data.top_categories.categories.map((c, i) => ({
+    icon: getCategoryIcon(c.domain),
+    percentage: c.percentage,
+    label: c.domain.replace("_", " ").toUpperCase(),
+    value: c.prompt_count,
+    color: HEAT_COLORS[Math.min(i, HEAT_COLORS.length - 1)]
+  }));
 
   return (
     <motion.div

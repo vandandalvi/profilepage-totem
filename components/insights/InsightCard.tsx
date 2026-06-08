@@ -3,18 +3,24 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const INSIGHTS = [
-  "You use Claude for coding 82% more than GPT.",
-  "Research prompts save you the most time — 3.2 hrs this month.",
-  "Your prompt efficiency improved 23% this week.",
-  "Coding prompts are 3× more detailed than your research prompts.",
-  "You're most productive between 10 AM – 1 PM.",
-];
+import { useDashboardData } from "@/lib/DashboardContext";
 
 export function InsightCard() {
+  const { data } = useDashboardData();
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const llmName = data?.most_used_llm?.llm && data.most_used_llm.llm !== "Unknown" 
+    ? data.most_used_llm.llm 
+    : "Claude";
+
+  const INSIGHTS = [
+    `You use ${llmName} for coding 82% more than others.`,
+    "Research prompts save you the most time — 3.2 hrs this month.",
+    "Your prompt efficiency improved 23% this week.",
+    "Coding prompts are 3× more detailed than your research prompts.",
+    "You're most productive between 10 AM – 1 PM.",
+  ];
 
   // Rotate insights every 8 seconds
   useEffect(() => {

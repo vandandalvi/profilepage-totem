@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAnimatedCounter } from "@/lib/useAnimatedCounter";
 import { ChatGPTIcon, ClaudeIcon, GeminiIcon, GrokIcon, LlamaIcon } from "@/components/icons/AIIcons";
+import { useDashboardData, DashboardStreakDay } from "@/lib/DashboardContext";
 
 // ── Types ──
 interface ModelUsage {
@@ -37,63 +37,16 @@ const MODEL_DEFS = [
   { model: "Llama", color: "#0668E1", icon: LlamaIcon },
 ];
 
-// ── Generate dummy 30-day data ──
-function generateDummyData(): ActivityData {
-  const today = new Date();
-  const days: DayData[] = [];
-
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-
-    // Create varied activity patterns
-    const seed = date.getDate() * 7 + date.getMonth() * 13;
-    const activityLevel = (seed % 5);
-
-    const models: ModelUsage[] = [];
-    if (activityLevel > 0) {
-      // Decide how many different models were used today (1 to 3)
-      const numModels = 1 + (seed % 3);
-      
-      // Weighted pool: 1st ChatGPT (0), 2nd Claude (1), 3rd Gemini (2), 4th Grok (3), then Llama (4)
-      const modelPool = [0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 4];
-      
-      for (let j = 0; j < numModels; j++) {
-        // Pick a model based on seed and loop index (use 7 to avoid mod 11 collision)
-        const poolIdx = (seed + j * 7) % modelPool.length;
-        const modelIdx = modelPool[poolIdx];
-        
-        // Generate a pseudo-random count for this model
-        const count = 2 + ((seed * (j + 2)) % 25);
-        
-        // Only add if not already in the array
-        if (!models.find(m => m.model === MODEL_DEFS[modelIdx].model)) {
-          models.push({ ...MODEL_DEFS[modelIdx], count });
-        }
-      }
-      
-      // Sort models by count descending so the tooltip looks nice
-      models.sort((a, b) => b.count - a.count);
-    }
-
-    const total = models.reduce((s, m) => s + m.count, 0);
-    // Find the model with the highest count (first element since we sorted)
-    const dominantModel = models.length > 0 ? models[0] : null;
-
-    days.push({
-      date,
-      models,
-      total,
-      dominantModel
-    });
-  }
-
-  return {
-    currentStreak: 5,
-    longestStreak: 12,
-    totalThisMonth: days.reduce((s, d) => s + d.total, 0),
-    days,
-  };
+// ── Helper to get model from platform name ──
+function mapPlatformToModelDef(platform: string) {
+  const norm = platform.toLowerCase();
+  if (norm.includes("gpt")) return MODEL_DEFS[0]; // ChatGPT
+  if (norm.includes("claude")) return MODEL_DEFS[1]; // Claude
+  if (norm.includes("gemini")) return MODEL_DEFS[2]; // Gemini
+  if (norm.includes("grok")) return MODEL_DEFS[3]; // Grok
+  if (norm.includes("llama")) return MODEL_DEFS[4]; // Llama
+  // If "extension", map it to a generic or default icon
+  return { model: platform, color: "var(--color-brand-teal)", icon: ChatGPTIcon };
 }
 
 // ── Day cell sub-component ──
@@ -213,29 +166,69 @@ function DayCell({ day, index }: { day: DayData; index: number }) {
 
 // ── Main Component ──
 export function ActivityCalendar() {
-  const [data, setData] = useState<ActivityData | null>(null);
+  const { data } = useDashboardData();
 
-  useEffect(() => {
-    // Generate dummy data on mount (client-side only)
-    setData(generateDummyData());
-  }, []);
+  // Derive activityData from the DashboardContext streak
+  const activityData = useMemo(() => {
+    if (!data) return null;
+    
+    // Sort days from oldest to newest based on API dates
+    const apiDays = [...data.streak.days].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    // Convert to DayData array
+    const convertedDays: DayData[] = apiDays.map((d: DashboardStreakDay) => {
+      // Map the platforms array
+      const mappedModels: ModelUsage[] = d.platforms.map(p => {
+        const def = mapPlatformToModelDef(p.platform);
+        return {
+          model: def.model,
+          color: def.color,
+          icon: def.icon,
+          count: p.prompt_count
+        };
+      }).sort((a, b) => b.count - a.count); // sort descending
 
-  const { value: streakValue, ref: streakRef } = useAnimatedCounter(data?.currentStreak ?? 0, 800);
-  const { value: totalValue, ref: totalRef } = useAnimatedCounter(data?.totalThisMonth ?? 0, 1200);
+      let dominantModel = null;
+      if (mappedModels.length > 0) {
+        if (d.top_platform) {
+          dominantModel = mappedModels.find(m => m.model.toLowerCase() === d.top_platform?.toLowerCase()) || mappedModels[0];
+        } else {
+          dominantModel = mappedModels[0];
+        }
+      }
+
+      return {
+        date: new Date(d.date),
+        total: d.prompt_count,
+        models: mappedModels,
+        dominantModel
+      };
+    });
+
+    return {
+      currentStreak: data.streak.current_streak,
+      longestStreak: data.streak.longest_streak,
+      totalThisMonth: data.streak.prompts_in_window,
+      days: convertedDays
+    };
+  }, [data]);
+
+  const { value: streakValue, ref: streakRef } = useAnimatedCounter(activityData?.currentStreak ?? 0, 800);
+  const { value: totalValue, ref: totalRef } = useAnimatedCounter(activityData?.totalThisMonth ?? 0, 1200);
 
   // Organize days into a calendar grid (7 cols = Sun-Sat)
   const calendarGrid = useMemo(() => {
-    if (!data) return [];
+    if (!activityData) return [];
     const grid: (DayData | null)[][] = [];
     let currentRow: (DayData | null)[] = [];
 
     // Pad the first row
-    const firstDayOfWeek = data.days[0]?.date.getDay() ?? 0;
+    const firstDayOfWeek = activityData.days[0]?.date.getDay() ?? 0;
     for (let i = 0; i < firstDayOfWeek; i++) {
       currentRow.push(null);
     }
 
-    for (const day of data.days) {
+    for (const day of activityData.days) {
       currentRow.push(day);
       if (currentRow.length === 7) {
         grid.push(currentRow);
@@ -250,11 +243,21 @@ export function ActivityCalendar() {
     }
 
     return grid;
-  }, [data]);
+  }, [activityData]);
 
-  const monthLabel = data?.days[data.days.length - 1]?.date.toLocaleDateString("en-US", { month: "long", year: "numeric" }) ?? "";
+  const dateRangeLabel = useMemo(() => {
+    if (!activityData || activityData.days.length === 0) return "";
+    const firstDate = activityData.days[0].date;
+    const lastDate = activityData.days[activityData.days.length - 1].date;
+    
+    const formatOptions: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+    const firstStr = firstDate.toLocaleDateString("en-US", formatOptions);
+    const lastStr = lastDate.toLocaleDateString("en-US", { ...formatOptions, year: "numeric" });
+    
+    return `${firstStr} - ${lastStr}`;
+  }, [activityData]);
 
-  if (!data) return null;
+  if (!activityData) return null;
 
   return (
     <motion.div
@@ -270,22 +273,20 @@ export function ActivityCalendar() {
             <span ref={streakRef} className="tabular-nums">{streakValue}</span> day streak
           </h2>
           <p className="text-[11px] text-text-tertiary mt-1 uppercase tracking-wider font-medium">
-            Longest: {data.longestStreak} days
+            Longest: {activityData.longestStreak} days
           </p>
         </div>
         <div className="text-right">
           <p className="text-[11px] font-bold tracking-[0.1em] text-text-tertiary uppercase">
-            THIS MONTH
+            LAST 30 DAYS
           </p>
           <span ref={totalRef} className="text-lg font-bold text-brand-teal tabular-nums block">{totalValue} <span className="text-[12px] font-normal text-text-secondary">prompts</span></span>
         </div>
       </div>
 
-      {/* Month nav */}
-      <div className="flex items-center justify-between text-[12px] font-medium text-text-secondary mb-4 px-1">
-        <ChevronLeft size={16} className="cursor-pointer hover:text-text-primary transition-colors shrink-0" />
-        <span className="text-text-primary font-semibold">{monthLabel}</span>
-        <ChevronRight size={16} className="cursor-pointer hover:text-text-primary transition-colors shrink-0" />
+      {/* Date range header */}
+      <div className="flex items-center justify-center text-[12px] font-medium text-text-secondary mb-4 px-1 border-b border-border-subtle/30 pb-2">
+        <span className="text-text-primary font-semibold">Activity: {dateRangeLabel}</span>
       </div>
 
       {/* Day labels */}

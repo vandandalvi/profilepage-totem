@@ -59,28 +59,6 @@ interface DashboardStats {
   };
 }
 
-const DUMMY_STATS: DashboardStats = {
-  dailyLimit: { used: 2, total: 3, percentage: 66 },
-  promptEfficiency: {
-    percentLessTyping: 74,
-    charsAvoided: 12840,
-    wordsAvoided: 2140,
-    timeSavedMinutes: 48,
-  },
-  topCategory: {
-    name: "Coding",
-    percentage: 58,
-    trend: 12,
-    tags: ["User Flows", "Research", "Debugging"],
-  },
-  topModel: {
-    name: "GPT-4",
-    promptCount: 124,
-    sharePercentage: 84,
-    trend: 18,
-  },
-};
-
 // ── Mobile Accordion Wrapper ──
 function MobileAccordionCard({
   label,
@@ -357,26 +335,66 @@ const cardVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } },
 };
 
+import { useDashboardData } from "@/lib/DashboardContext";
+
 // ── Main Component ──
 export function StatCards() {
-  const [stats, setStats] = useState<DashboardStats | null>(DUMMY_STATS);
+  const { data } = useDashboardData();
+  
+  if (!data) return null;
 
-  useEffect(() => {
-    // TODO: Replace with your actual API endpoint
-    const fetchStats = async () => {
-      try {
-        // const response = await fetch('/api/v1/dashboard/stats');
-        // const data = await response.json();
-        // setStats(data);
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
-      }
-    };
+  const { usage, prompt_efficiency: eff, most_used_domain: dom, most_used_llm: llm, llms } = data;
 
-    // fetchStats(); // Uncomment to fetch from API
-  }, []);
+  // Fallback logic for Most Used AI if the API returns "unknown"
+  let topModelName = llm.llm;
+  let topModelCount = llm.prompt_count;
+  let topModelPercentage = llm.percentage;
 
-  if (!stats) return null;
+  if ((!topModelName || topModelName.toLowerCase() === "unknown") && llms && llms.length > 0) {
+    const validLlms = llms
+      .filter(l => l.llm && l.llm.toLowerCase() !== "unknown")
+      .sort((a, b) => b.prompt_count - a.prompt_count);
+    
+    if (validLlms.length > 0) {
+      topModelName = validLlms[0].llm;
+      topModelCount = validLlms[0].prompt_count;
+      topModelPercentage = validLlms[0].percentage;
+    } else {
+      topModelName = "ChatGPT";
+      topModelCount = usage.total_prompts;
+      topModelPercentage = 100;
+    }
+  } else if (!topModelName || topModelName.toLowerCase() === "unknown") {
+    topModelName = "ChatGPT";
+    topModelCount = usage.total_prompts;
+    topModelPercentage = 100;
+  }
+
+  const stats: DashboardStats = {
+    dailyLimit: {
+      used: usage.used_today,
+      total: usage.daily_limit,
+      percentage: usage.daily_limit > 0 ? Math.round((usage.used_today / usage.daily_limit) * 100) : 0,
+    },
+    promptEfficiency: {
+      percentLessTyping: eff.less_typing_percentage,
+      charsAvoided: eff.chars_saved,
+      wordsAvoided: eff.words_saved,
+      timeSavedMinutes: eff.time_saved_minutes,
+    },
+    topCategory: {
+      name: dom.domain,
+      percentage: dom.percentage,
+      trend: 12, // Dummy trend
+      tags: ["User Flows", "Research", "Debugging"], // Dummy tags
+    },
+    topModel: {
+      name: topModelName,
+      promptCount: topModelCount,
+      sharePercentage: topModelPercentage,
+      trend: 18, // Dummy trend
+    },
+  };
 
   return (
     <motion.div
